@@ -1,7 +1,7 @@
 <script lang="ts">
     import Badge from "$lib/components/ui/badge/Badge.svelte";
     import type { Asset } from "./type";
-    import type { Transaction } from "../../finance/type";
+    import type { Transaction } from "../finance/type";
     import { onMount } from "svelte";
     import { currentOrg } from "$lib/stores/session";
 

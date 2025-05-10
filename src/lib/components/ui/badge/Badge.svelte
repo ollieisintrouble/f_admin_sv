@@ -3,7 +3,7 @@
     import { onMount } from "svelte";
 
     let { content, type } = $props();
-    let dynamicClasses = $state("text-gray-800 bg-gray-200");
+    let dynamicClasses = $state("text-slate-800 bg-slate-200");
     let isMounted = false;
 
     onMount(() => {
@@ -14,8 +14,8 @@
     function updateStyles() {
         if (!isMounted) return;
 
-        const color = getColor(type, content) || "gray";
-        dynamicClasses = `text-${color}-800 bg-${color}-200`;
+        const color = getColor(type, content) || "slate";
+        dynamicClasses = `text-${color}-700 bg-${color}-100`;
     }
 
     $effect(() => {

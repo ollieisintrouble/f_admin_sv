@@ -28,7 +28,7 @@
 		/>
 	{/if}
 	<div
-		class={`h-full px-10 py-8 ${!altLayout && "bg-gradient-to-b from-sky-100 via-cyan-100 via-15% to-emerald-50 rounded-t-[3rem]"} ${altLayout && "flex justify-center items-center"}`}
+		class={`h-full px-10 py-8 bg-gradient-to-b from-sky-100 via-cyan-100 via-15% to-emerald-50 ${!altLayout && "rounded-t-[3rem]"} ${altLayout && "flex justify-center items-center"}`}
 	>
 		{@render children()}
 	</div>

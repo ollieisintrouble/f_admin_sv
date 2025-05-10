@@ -41,7 +41,7 @@ export const colorMap: ColorMapping = {
         Production: "emerald",
         Building: "blue",
         Planned: "amber",
-        EOL: "gray",
+        EOL: "slate",
     },
 };
 

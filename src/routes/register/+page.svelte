@@ -1,119 +1,129 @@
 <script lang="ts">
     import { Label, Input, Button } from "flowbite-svelte";
+    let username = "";
+    let password = "";
+    let pwcf = "";
+    let error: string | null = null;
+    let mismatch = false;
 
     async function handleSubmit(event: Event) {
         event.preventDefault();
+        console.log("Form submitted:", { username, password, pwcf });
 
-        const data = {
-            username:
-                (
-                    document.querySelector(
-                        'input[name="username"]',
-                    ) as HTMLInputElement
-                )?.value || "",
-            password:
-                (
-                    document.querySelector(
-                        'input[name="password"]',
-                    ) as HTMLInputElement
-                )?.value || "",
-            fullName: "",
-            email: "",
-            phone: "",
-        };
+        if (password !== pwcf) {
+            error = "Passwords do not match";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("username", username);
+        formData.append("password", password);
 
         try {
-            const response = await fetch("http://localhost:8080/api/register", {
+            console.log("Sending fetch to /register");
+            const response = await fetch("/register", {
                 method: "POST",
+                body: formData,
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                    "X-Requested-With": "XMLHttpRequest",
                 },
-                body: JSON.stringify(data),
+            });
+            const responseBody = await response.text();
+            console.log("Fetch response:", {
+                status: response.status,
+                url: response.url,
+                headers: [...response.headers.entries()],
+                body: responseBody,
             });
 
             if (response.ok) {
-                const result = await response.json();
-                if (result.token) {
-                    localStorage.setItem("authToken", result.token);
-                    console.log("Registration successful");
-                    window.location.href = "/";
-                } else {
-                    console.error("Token not found in response.");
-                }
+                console.log("Redirecting to /");
+                window.location.href = "/";
             } else {
-                console.error("Registration failed:", response.statusText);
+                let data;
+                try {
+                    data = JSON.parse(responseBody);
+                } catch {
+                    data = { message: "Registration failed" };
+                }
+                error = data.message || "Registration failed";
+                console.log("Registration error:", data);
             }
-        } catch (error) {
-            console.error("Error during registration:", error);
+        } catch (err) {
+            console.error("Fetch error:", err);
+            error = `An unexpected error occurred: ${err}`;
         }
     }
 
-    let pw = $state();
-    let pwcf = $state();
-    let notMatch = $state<boolean>(false);
-
-    $effect(() => {
-        if (pw !== pwcf) {
-            notMatch = true;
-        } else {
-            notMatch = false;
-        }
-    });
+    $: mismatch = password !== pwcf;
 </script>
 
-<div class="space-y-4 p-6 sm:p-8 md:space-y-6">
-    <form class="flex flex-col space-y-6">
-        <h3 class="p-0 text-xl font-medium text-gray-900 dark:text-white">
-            Create an account
+<div
+    class="space-y-4 p-6 sm:p-8 md:space-y-6 min-w-80 w-[480px] border-2 border-white/60 bg-white/40 backdrop-blur-2xl rounded-2xl"
+>
+    <form
+        action="/register"
+        class="flex flex-col space-y-6"
+        on:submit={handleSubmit}
+    >
+        <h3 class="text-4xl font-medium text-slate-800 dark:text-white mb-5">
+            Register
         </h3>
         <div class="mb-3">
-            <Label for="amount" class="block mb-2">Amount</Label>
+            <Label for="username" class="block mb-1">Username</Label>
             <Input
                 type="text"
-                id="username"
+                bind:value={username}
                 name="username"
+                id="username"
                 placeholder="Your awesome username"
                 required
             />
         </div>
         <div class="mb-3">
-            <Label for="amount" class="block mb-2">Amount</Label>
+            <Label for="password" class="block mb-1">Password</Label>
             <Input
                 type="password"
-                id="password"
+                bind:value={password}
                 name="password"
-                placeholder="•••••"
+                id="password"
+                placeholder="Your secret password"
                 required
             />
         </div>
         <div class="mb-3">
-            <Label for="amount" class="block mb-2">Amount</Label>
+            <Label for="confirm-password" class="block mb-1"
+                >Confirm Password</Label
+            >
             <Input
                 type="password"
-                id="confirm-password"
+                bind:value={pwcf}
                 name="confirm-password"
-                placeholder="•••••"
+                id="confirm-password"
+                placeholder="Re-type password just to be sure"
                 required
             />
         </div>
-        {#if notMatch}
-            <div class="text-sm font-medium text-red-800 dark:text-red-500">
+        {#if error}
+            <p style="color: red">{error}</p>
+        {/if}
+        {#if mismatch}
+            <div class="text-sm font-medium text-rose-800 dark:text-rose-500">
                 Password re-confirmation does not match
             </div>
         {/if}
-        <button
-            class="rounded-input bg-dark text-background shadow-mini hover:bg-dark/95 inline-flex h-12 items-center justify-center px-[21px] text-[15px] font-semibold active:scale-[0.98] active:transition-all"
+        <Button
             type="submit"
-            disabled={notMatch}
-            onclick={handleSubmit}
+            class="mt-2 transition-color duration-300"
+            size="lg"
+            disabled={mismatch}
         >
             Create account
-        </button>
-        <div class="text-sm font-medium text-gray-500 dark:text-gray-300">
+        </Button>
+        <div class="text-sm font-medium text-slate-500 dark:text-slate-300">
             Already have an account? <a
                 href="/login"
-                class="text-primary-600 dark:text-primary-500 font-medium hover:underline"
+                class="text-primary-600 dark:text-primary-400 font-medium hover:underline"
                 >Login here</a
             >
         </div>

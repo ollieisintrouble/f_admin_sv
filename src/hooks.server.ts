@@ -4,9 +4,10 @@ import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
     const token = event.cookies.get('authToken');
-    const currentRoute = event.url.pathname
+    const currentRoute = event.url.pathname;
+    const publicRoutes = ['/login', '/register', '/neworg', 'payment', 'error'];
 
-    if (!token && currentRoute !== '/login') {
+    if (!token && !publicRoutes.includes(currentRoute)) {
         throw redirect(303, '/login');
     }
 

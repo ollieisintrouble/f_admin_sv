@@ -5,6 +5,12 @@
     import { onMount } from "svelte";
     let transactions: Transaction[] = $state<Transaction[]>([]);
     import { Datepicker, Label, Input, Modal, Button } from "flowbite-svelte";
+    import { Trash, Pencil } from "phosphor-svelte";
+    import {
+        TrashBinOutline,
+        EditOutline,
+        ChevronDoubleDownOutline,
+    } from "flowbite-svelte-icons";
 
     onMount(async () => {
         const fetchTransactions = await fetch(
@@ -218,45 +224,52 @@
         </div>
     </div>
     <div class="w-full flex items-center gap-16">
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 min-w-32">
             <span class="text-sm text-slate-500">Total Revenue</span>
             <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{totalRevenue.toLocaleString()}<span class="text-slate-500"
-                    >{" "}VND</span
+                >{totalRevenue.toLocaleString()}<span class="text-slate-400"
+                    >{" "}đ</span
                 ></span
             >
         </div>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 min-w-32">
             <span class="text-sm text-slate-500">Paid Expense</span>
             <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{paidExpense.toLocaleString()}<span class="text-slate-500"
-                    >{" "}VND</span
+                >{paidExpense.toLocaleString()}<span class="text-slate-400"
+                    >{" "}đ</span
                 ></span
             >
         </div>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 min-w-32">
             <span class="text-sm text-slate-500">Unpaid Expense</span>
             <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{unpaidExpense.toLocaleString()}<span class="text-slate-500"
-                    >{" "}VND</span
+                >{unpaidExpense.toLocaleString()}<span class="text-slate-400"
+                    >{" "}đ</span
                 ></span
             >
         </div>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 min-w-32">
             <span class="text-sm text-slate-500">Upcoming Expense</span>
             <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{upcomingExpense.toLocaleString()}<span class="text-slate-500"
-                    >{" "}VND</span
+                >{upcomingExpense.toLocaleString()}<span class="text-slate-400"
+                    >{" "}đ</span
                 ></span
             >
         </div>
-        <div class="flex flex-col gap-1">
-            <span class="text-sm text-slate-500">Profit/Loss</span>
-            <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{margin.toLocaleString()}<span class="text-slate-500"
-                    >{" "}VND</span
-                ></span
+        <div class="flex flex-col gap-1 min-w-32">
+            <span class="text-sm text-slate-500">Margin</span>
+            <div
+                class={`flex items-center gap-0 text-xl text-slate-600 font-medium animate-num-in`}
             >
+                <ChevronDoubleDownOutline
+                    class={`w-6 h-6 -ml-[6px] ${margin > 0 && "text-emerald-700"} ${margin < 0 && "text-rose-700"}`}
+                />
+                <span
+                    class={`${margin > 0 && "text-emerald-800"} ${margin < 0 && "text-rose-800"}`}
+                    >{margin.toLocaleString()}</span
+                >
+                <span class="text-slate-400">{" "}đ</span>
+            </div>
         </div>
     </div>
     <div class="w-full grid grid-cols-12 h-full gap-6">
@@ -271,39 +284,42 @@
                 <thead>
                     <tr>
                         <th
-                            class="text-sm min-w-48 font-normal text-slate-500 pl-4 pr-10 py-2 text-left"
+                            class="text-sm min-w-48 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
                             >Amount</th
                         >
                         <th
-                            class="text-sm min-w-72 font-normal text-slate-500 pl-4 pr-10 py-2 text-left"
+                            class="text-sm min-w-64 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
                             >Description</th
                         >
                         <th
-                            class="text-sm min-w-36 font-normal text-slate-500 pl-4 pr-10 py-2 text-left"
+                            class="text-sm min-w-40 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
                             >Payment Method</th
                         >
                         <th
-                            class="text-sm min-w-36 font-normal text-slate-500 pl-4 pr-10 py-2 text-left"
+                            class="text-sm min-w-32 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
                             >Status</th
                         >
                         <th
-                            class="text-sm min-w-36 font-normal text-slate-500 pl-4 pr-10 py-2 text-left"
+                            class="text-sm min-w-32 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
                             >Type</th
                         >
                         <th
-                            class="text-sm min-w-36 font-normal text-slate-500 pl-4 pr-10 py-2 text-left"
+                            class="text-sm min-w-40 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
                             >Recorded Date</th
                         >
+                        <th
+                            class="text-sm min-w-24 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
+                        ></th>
                     </tr>
                 </thead>
                 <tbody>
                     {#each transactions as transaction}
                         <tr>
                             <td
-                                class={`animate-num-in text-base font-medium pl-4 pr-10 py-4 text-left ${transaction.amount < 0 ? "text-rose-800" : "text-emerald-800"}`}
+                                class={`animate-num-in text-base font-medium pl-4 pr-10 py-4 text-left ${transaction.amount < 0 ? "text-rose-900" : "text-emerald-900"}`}
                             >
                                 {transaction.amount.toLocaleString()}
-                                <span class="text-slate-500">{" "}VND</span>
+                                <span class="text-slate-500">{" "}đ</span>
                             </td>
                             <td
                                 class="animate-num-in text-base font-normal text-slate-700 pl-4 pr-10 py-4 text-left"
@@ -347,7 +363,6 @@
                                     <span class="text-slate-400">-</span>
                                 {/if}
                             </td>
-
                             <td
                                 class="animate-num-in text-base font-normal text-slate-700 pl-4 pr-10 py-4 text-left"
                             >
@@ -362,6 +377,24 @@
                                         day: "2-digit",
                                     })}
                                 {/if}
+                            </td>
+                            <td
+                                class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-4 text-right"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <Button
+                                        color="alternative"
+                                        class="border-0 bg-transparent px-2 py-2 text-slate-700"
+                                        ><EditOutline class="h-5 w-5" /></Button
+                                    >
+                                    <Button
+                                        color="alternative"
+                                        class="border-0 bg-transparent px-2 py-2 text-rose-700"
+                                        ><TrashBinOutline
+                                            class="h-5 w-5"
+                                        /></Button
+                                    >
+                                </div>
                             </td>
                         </tr>
                     {/each}
