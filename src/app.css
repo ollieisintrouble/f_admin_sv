@@ -97,17 +97,17 @@ h6 {
 
 @theme inline {
     --breakpoint-desktop: 1440px;
-    --animate-accordion-down: accordion-down 0.2s ease-out;
-    --animate-accordion-up: accordion-up 0.2s ease-out;
+    --animate-accordion-down: accordion-down 0.3s ease-out;
+    --animate-accordion-up: accordion-up 0.3s ease-out;
     --animate-caret-blink: caret-blink 1s ease-out infinite;
-    --animate-scale-in: scale-in 0.2s ease;
+    --animate-scale-in: scale-in 0.3s ease;
     --animate-scale-out: scale-out 0.15s ease;
-    --animate-fade-in: fade-in 0.2s ease;
+    --animate-fade-in: fade-in 0.3s ease;
     --animate-fade-out: fade-out 0.15s ease;
-    --animate-enter-from-left: enter-from-left 0.2s ease;
-    --animate-enter-from-right: enter-from-right 0.2s ease;
-    --animate-exit-to-left: exit-to-left 0.2s ease;
-    --animate-exit-to-right: exit-to-right 0.2s ease;
+    --animate-enter-from-left: enter-from-left 0.3s ease;
+    --animate-enter-from-right: enter-from-right 0.3s ease;
+    --animate-exit-to-left: exit-to-left 0.3s ease;
+    --animate-exit-to-right: exit-to-right 0.3s ease;
     --animate-num-in: num-in 0.3s ease-in-out;
 
     @keyframes accordion-down {
@@ -147,7 +147,7 @@ h6 {
     @keyframes enter-from-right {
         from {
             opacity: 0;
-            transform: translateX(200px);
+            transform: translateX(20px);
         }
 
         to {
@@ -159,7 +159,7 @@ h6 {
     @keyframes enter-from-left {
         from {
             opacity: 0;
-            transform: translateX(-200px);
+            transform: translateX(-20px);
         }
 
         to {
@@ -252,4 +252,8 @@ h6 {
             opacity: 1;
         }
     }
+}
+
+.basic-transition {
+    transition: all 300ms;
 }

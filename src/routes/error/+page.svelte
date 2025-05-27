@@ -1,10 +1,4 @@
-<script lang="ts">
-    import { Heading } from "flowbite-svelte";
-</script>
-
-<div class="flex flex-col items-center justify-center h-full">
-    <Heading tag="h1" class="mb-4">Technical Error</Heading>
-    <p class="text-lg text-gray-600">
-        Please try again later or contact support if the problem persists.
-    </p>
+<div class="flex flex-col items-center">
+    <img src="/img/emp8.webp" alt="" width="360px" height="360px" />
+    <h3 class="text-slate-800 text-2xl">Unexpected error occurred</h3>
 </div>

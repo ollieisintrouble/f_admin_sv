@@ -25,3 +25,5 @@ export type SessionProps = {
     orgs?: Organization[],
     memberships?: Membership[],
 }
+
+export type Page = { num: number, items: any[] }

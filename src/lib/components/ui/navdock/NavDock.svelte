@@ -26,6 +26,14 @@
             icon: Stack,
         },
         {
+            name: "Finance",
+            icon: Invoice,
+        },
+        {
+            name: "Team",
+            icon: UsersThree,
+        },
+        {
             name: "Marketing",
             icon: Megaphone,
         },
@@ -37,14 +45,6 @@
             name: "Sale",
             icon: ChartLineUp,
         },
-        {
-            name: "Finance",
-            icon: Invoice,
-        },
-        {
-            name: "Team",
-            icon: UsersThree,
-        },
     ];
     let activeItem = $state(page.url.pathname);
     $effect(() => {
@@ -52,11 +52,11 @@
     });
 </script>
 
-<div class="flex p-2 items-center">
+<div class="flex items-center">
     {#each navItems as item}
         <a href={`/${item.name.toLowerCase()}`}>
             <div
-                class={`flex items-center px-4 py-3 gap-2 cursor-pointer text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-300 ease-out rounded-xl ${activeItem === `/${item.name.toLowerCase()}` && "bg-cyan-100! text-cyan-800! hover:bg-cyan-100! hover:text-cyan-800!"}`}
+                class={`flex items-center px-4 py-3 gap-2 cursor-pointer text-slate-400 hover:text-slate-600 hover:bg-slate-100 basic-transition rounded-xl ${activeItem === `/${item.name.toLowerCase()}` && "bg-cyan-100! text-cyan-800! hover:bg-cyan-100! hover:text-cyan-800!"}`}
             >
                 <item.icon
                     size={24}

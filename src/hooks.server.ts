@@ -16,15 +16,6 @@ export const handle: Handle = async ({ event, resolve }) => {
         throw redirect(303, '/login');
     }
 
-    // if (
-    //     token &&
-    //     event.locals.user &&
-    //     event.locals.orgs &&
-    //     event.locals.memberships
-    // ) {
-    //     return resolve(event);
-    // }
-
     if (token) {
         const response = await fetch('http://localhost:8080/api/valtok', {
             headers: {

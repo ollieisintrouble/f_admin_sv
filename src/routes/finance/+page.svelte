@@ -1,18 +1,53 @@
 <script lang="ts">
     import Badge from "$lib/components/ui/badge/Badge.svelte";
+    import Empty from "$lib/components/ui/empty/Empty.svelte";
     import { currentOrg, user } from "$lib/stores/session";
     import type { Transaction } from "./type";
     import { onMount } from "svelte";
-    let transactions: Transaction[] = $state<Transaction[]>([]);
-    import { Datepicker, Label, Input, Modal, Button } from "flowbite-svelte";
-    import { Trash, Pencil } from "phosphor-svelte";
+    import {
+        Datepicker,
+        Label,
+        Input,
+        Modal,
+        Button,
+        Spinner,
+    } from "flowbite-svelte";
     import {
         TrashBinOutline,
         EditOutline,
         ChevronDoubleDownOutline,
+        PlusOutline,
+        ChevronLeftOutline,
+        ChevronRightOutline,
+        ChevronDoubleLeftOutline,
+        ChevronDoubleRightOutline,
+        DotsHorizontalOutline,
     } from "flowbite-svelte-icons";
+    import type { Page } from "$lib/types/types";
+    import { CalcPages, CalcVisiblePages } from "$lib/pagination/helpers";
+    import { toast } from "svelte-sonner";
+
+    let isLoading = $state<boolean>(false);
+    let transactions = $state<Transaction[]>([]);
+    let totalRevenue = $state(0);
+    let paidExpense = $state(0);
+    let upcomingExpense = $state(0);
+    let margin = $derived(totalRevenue + paidExpense);
+    let defaultModal = $state<boolean>(false);
+    let newDate = $state<Date>(new Date());
+    const pageBucket = 10;
+    let currentPage = $state(1);
+    let total = $derived(transactions.length);
+    let pageCount = $derived(Math.ceil(total / pageBucket));
+    let pages = $state<Page[]>([]);
+    let pagesVisible = $state<Page[]>([]);
+    function setPage(page: number) {
+        currentPage = page;
+        pagesVisible = CalcVisiblePages(pages, page);
+    }
 
     onMount(async () => {
+        isLoading = true;
         const fetchTransactions = await fetch(
             `http://localhost:8080/api/transactions?org_id=${$currentOrg!.id}`,
             {
@@ -26,16 +61,14 @@
         if (fetchTransactions.ok) {
             const transactionsData = await fetchTransactions.json();
             transactions = transactionsData;
+            pages = CalcPages(transactions);
+            pagesVisible = CalcVisiblePages(pages, currentPage);
+            isLoading = false;
         } else {
-            console.log("Failed to get financial data");
+            toast.error("Failed to get transactions");
+            isLoading = false;
         }
     });
-
-    let totalRevenue = $state(0);
-    let paidExpense = $state(0);
-    let unpaidExpense = $state(0);
-    let upcomingExpense = $state(0);
-    let margin = $derived(totalRevenue + paidExpense);
 
     $effect(() => {
         totalRevenue = transactions
@@ -47,12 +80,6 @@
                     transaction.amount < 0 && transaction.status === "Paid",
             )
             .reduce((acc, transaction) => acc + transaction.amount, 0);
-        unpaidExpense = transactions
-            .filter(
-                (transaction) =>
-                    transaction.amount < 0 && transaction.status === "Unpaid",
-            )
-            .reduce((acc, transaction) => acc + transaction.amount, 0);
         upcomingExpense = transactions
             .filter(
                 (transaction) =>
@@ -60,8 +87,6 @@
             )
             .reduce((acc, transaction) => acc + transaction.amount, 0);
     });
-
-    let newDate = $state<Date>(new Date());
 
     async function handleNewTransaction(event: Event) {
         event.preventDefault();
@@ -131,26 +156,69 @@
             );
 
             if (newTransactionRequest.ok) {
-                console.log("Created success");
+                const response = await newTransactionRequest.json();
+                const lastTransaction = transactions.at(-1);
+                if (lastTransaction) {
+                    lastTransaction.id = response;
+                }
+                pages = CalcPages(transactions);
+                pagesVisible = CalcVisiblePages(pages, currentPage);
+                toast.success("Logged transaction successfully");
             } else {
                 transactions.pop();
-                console.log("Failed");
+                toast.error("Failed to log transaction");
             }
         } catch (error) {
             transactions.pop();
-            console.log(`Create failed: ${error}`);
+            toast.error("Unexpected error occurred", {
+                description: `${error}`,
+            });
         }
     }
 
-    let defaultModal = $state<boolean>(false);
+    async function handleDeleteTransaction(id: number) {
+        try {
+            const deleteTransactionRequest = await fetch(
+                `http://localhost:8080/api/transactions?org_id=${$currentOrg!.id}`,
+                {
+                    method: "DELETE",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(id),
+                },
+            );
+
+            if (deleteTransactionRequest.ok) {
+                const deletedIndex = transactions.indexOf(
+                    transactions.find((i) => i.id === id) as Transaction,
+                );
+                if (deletedIndex > -1) {
+                    transactions.splice(deletedIndex, 1);
+                }
+                pages = CalcPages(transactions);
+                pagesVisible = CalcVisiblePages(pages, currentPage);
+                toast.success("Deleted transaction successfully");
+            } else {
+                toast.error("Failed to delete transaction");
+            }
+        } catch (error) {
+            toast.error("Unexpected error occurred", {
+                description: `${error}`,
+            });
+        }
+    }
 </script>
 
-<div class="flex flex-col gap-6 h-full">
+<div class="flex flex-col gap-5 h-full">
     <div class="w-full flex justify-between items-center">
         <h1 class="text-slate-700 text-4xl">Finance Hub</h1>
         <div>
-            <Button on:click={() => (defaultModal = true)} class="bg-sky-800"
-                >New Transaction</Button
+            <Button
+                on:click={() => (defaultModal = true)}
+                class="bg-sky-700 pl-4 basic-transition"
+                ><PlusOutline class="h-4 w-4 me-2" />New Transaction</Button
             >
             <Modal
                 title="Create new transaction"
@@ -169,6 +237,7 @@
                             id="amount"
                             name="newAmount"
                             placeholder="Enter amount"
+                            class="basic-transition"
                         />
                         <Label class="mt-1 text-xs text-gray-500"
                             >Add minus "-" at the start of the number if logging
@@ -181,6 +250,7 @@
                             id="method"
                             name="newMethod"
                             placeholder="Enter method"
+                            class="basic-transition"
                         />
                     </div>
                     <div class="mb-3 w-full">
@@ -189,6 +259,7 @@
                             id="status"
                             name="newStatus"
                             placeholder="Enter status"
+                            class="basic-transition"
                         />
                     </div>
                     <div class="mb-3 w-full">
@@ -197,6 +268,7 @@
                             id="type"
                             name="newType"
                             placeholder="Enter type"
+                            class="basic-transition"
                         />
                     </div>
                     <div class="mb-3 w-full">
@@ -207,12 +279,13 @@
                             id="description"
                             name="newDescription"
                             placeholder="Enter description"
-                            class="rounded-lg border-gray-300 bg-gray-50 text-sm w-full min-h-28"
+                            class="rounded-lg basic-transition border-gray-300 bg-gray-50 text-sm w-full min-h-28"
                         ></textarea>
                     </div>
                 </form>
                 <svelte:fragment slot="footer">
                     <Button
+                        class="basic-transition"
                         color="alternative"
                         on:click={() => {
                             defaultModal = false;
@@ -223,190 +296,291 @@
             </Modal>
         </div>
     </div>
-    <div class="w-full flex items-center gap-16">
-        <div class="flex flex-col gap-1 min-w-32">
-            <span class="text-sm text-slate-500">Total Revenue</span>
-            <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{totalRevenue.toLocaleString()}<span class="text-slate-400"
-                    >{" "}đ</span
-                ></span
-            >
-        </div>
-        <div class="flex flex-col gap-1 min-w-32">
-            <span class="text-sm text-slate-500">Paid Expense</span>
-            <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{paidExpense.toLocaleString()}<span class="text-slate-400"
-                    >{" "}đ</span
-                ></span
-            >
-        </div>
-        <div class="flex flex-col gap-1 min-w-32">
-            <span class="text-sm text-slate-500">Unpaid Expense</span>
-            <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{unpaidExpense.toLocaleString()}<span class="text-slate-400"
-                    >{" "}đ</span
-                ></span
-            >
-        </div>
-        <div class="flex flex-col gap-1 min-w-32">
-            <span class="text-sm text-slate-500">Upcoming Expense</span>
-            <span class="text-xl text-slate-600 font-medium animate-num-in"
-                >{upcomingExpense.toLocaleString()}<span class="text-slate-400"
-                    >{" "}đ</span
-                ></span
-            >
-        </div>
-        <div class="flex flex-col gap-1 min-w-32">
-            <span class="text-sm text-slate-500">Margin</span>
-            <div
-                class={`flex items-center gap-0 text-xl text-slate-600 font-medium animate-num-in`}
-            >
-                <ChevronDoubleDownOutline
-                    class={`w-6 h-6 -ml-[6px] ${margin > 0 && "text-emerald-700"} ${margin < 0 && "text-rose-700"}`}
-                />
-                <span
-                    class={`${margin > 0 && "text-emerald-800"} ${margin < 0 && "text-rose-800"}`}
-                    >{margin.toLocaleString()}</span
-                >
-                <span class="text-slate-400">{" "}đ</span>
-            </div>
-        </div>
-    </div>
     <div class="w-full grid grid-cols-12 h-full gap-6">
         <div
-            class="bg-white/70 p-5 rounded-3xl w-full h-full col-span-9 flex flex-col gap-4 animate-fade-in"
+            class="bg-white/70 p-5 rounded-3xl w-full h-full col-span-9 flex flex-col gap-5 animate-fade-in"
         >
             <div class="flex justify-between items-center pt-2 pl-2">
                 <h1 class="text-slate-700 text-2xl">Listing</h1>
                 <div></div>
             </div>
-            <table class="w-full">
-                <thead>
-                    <tr>
-                        <th
-                            class="text-sm min-w-48 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
-                            >Amount</th
-                        >
-                        <th
-                            class="text-sm min-w-64 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
-                            >Description</th
-                        >
-                        <th
-                            class="text-sm min-w-40 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
-                            >Payment Method</th
-                        >
-                        <th
-                            class="text-sm min-w-32 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
-                            >Status</th
-                        >
-                        <th
-                            class="text-sm min-w-32 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
-                            >Type</th
-                        >
-                        <th
-                            class="text-sm min-w-40 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
-                            >Recorded Date</th
-                        >
-                        <th
-                            class="text-sm min-w-24 font-normal text-slate-500 pl-4 pr-6 py-2 text-left"
-                        ></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each transactions as transaction}
-                        <tr>
-                            <td
-                                class={`animate-num-in text-base font-medium pl-4 pr-10 py-4 text-left ${transaction.amount < 0 ? "text-rose-900" : "text-emerald-900"}`}
-                            >
-                                {transaction.amount.toLocaleString()}
-                                <span class="text-slate-500">{" "}đ</span>
-                            </td>
-                            <td
-                                class="animate-num-in text-base font-normal text-slate-700 pl-4 pr-10 py-4 text-left"
-                            >
-                                {#if transaction.description !== null}
-                                    {transaction.description ?? "-"}
-                                {:else}
-                                    <span class="text-slate-400">-</span>
-                                {/if}
-                            </td>
-                            <td
-                                class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-4 text-left"
-                            >
-                                {#if transaction.method !== null}
-                                    {transaction.method}
-                                {:else}
-                                    <span class="text-slate-400">-</span>
-                                {/if}
-                            </td>
-                            <td
-                                class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-4 text-left"
-                            >
-                                {#if transaction.status !== null}
-                                    <Badge
-                                        content={transaction.status}
-                                        type="transactionStatus"
-                                    />
-                                {:else}
-                                    <span class="text-slate-400">-</span>
-                                {/if}
-                            </td>
-                            <td
-                                class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-4 text-left"
-                            >
-                                {#if transaction.type !== null}
-                                    <Badge
-                                        content={transaction.type}
-                                        type="transactionType"
-                                    />
-                                {:else}
-                                    <span class="text-slate-400">-</span>
-                                {/if}
-                            </td>
-                            <td
-                                class="animate-num-in text-base font-normal text-slate-700 pl-4 pr-10 py-4 text-left"
-                            >
-                                {#if transaction.recordedDate === null}
-                                    <span class="text-slate-400">-</span>
-                                {:else}
-                                    {new Date(
-                                        transaction.recordedDate as Date,
-                                    ).toLocaleDateString("en-GB", {
-                                        year: "numeric",
-                                        month: "2-digit",
-                                        day: "2-digit",
-                                    })}
-                                {/if}
-                            </td>
-                            <td
-                                class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-4 text-right"
-                            >
-                                <div class="flex items-center gap-2">
-                                    <Button
-                                        color="alternative"
-                                        class="border-0 bg-transparent px-2 py-2 text-slate-700"
-                                        ><EditOutline class="h-5 w-5" /></Button
+            {#if isLoading}
+                <div class="w-full h-full flex justify-center items-center">
+                    <Spinner size="6" class="me-3" />
+                    <p class="text-slate-800 text-lg">Hold on a sec...</p>
+                </div>
+            {:else if transactions.length === 0}
+                <div class="w-full h-full flex items-center justify-center">
+                    <Empty />
+                </div>
+            {:else}
+                {#if pages[currentPage - 1]}
+                    <div class="h-full">
+                        <table class="w-full">
+                            <thead>
+                                <tr>
+                                    <th
+                                        class="text-sm min-w-40 font-normal text-slate-500 pl-4 pr-6 py-2 text-left truncate"
+                                        >Amount</th
                                     >
-                                    <Button
-                                        color="alternative"
-                                        class="border-0 bg-transparent px-2 py-2 text-rose-700"
-                                        ><TrashBinOutline
-                                            class="h-5 w-5"
-                                        /></Button
+                                    <th
+                                        class="text-sm min-w-64 font-normal text-slate-500 pl-4 pr-6 py-2 text-left truncate"
+                                        >Description</th
                                     >
-                                </div>
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
+                                    <th
+                                        class="text-sm min-w-40 font-normal text-slate-500 pl-4 pr-6 py-2 text-left truncate"
+                                        >Payment Method</th
+                                    >
+                                    <th
+                                        class="text-sm min-w-32 font-normal text-slate-500 pl-4 pr-6 py-2 text-left truncate"
+                                        >Status</th
+                                    >
+                                    <th
+                                        class="text-sm min-w-32 font-normal text-slate-500 pl-4 pr-6 py-2 text-left truncate"
+                                        >Type</th
+                                    >
+                                    <th
+                                        class="text-sm min-w-32 font-normal text-slate-500 pl-4 pr-6 py-2 text-left truncate"
+                                        >Recorded Date</th
+                                    >
+                                    <th
+                                        class="text-sm w-24 font-normal text-slate-500 pl-4 pr-6 py-2 text-left truncate"
+                                    ></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {#each pages[currentPage - 1].items as transaction (transaction.id)}
+                                    <tr
+                                        class="group hover:bg-white/60 basic-transition !h-14"
+                                    >
+                                        <td
+                                            class={`animate-num-in text-base font-medium pl-4 pr-10 py-3 text-left ${transaction.amount < 0 ? "text-rose-900" : "text-emerald-900"}`}
+                                        >
+                                            {transaction.amount.toLocaleString()}
+                                            <span class="text-slate-500"
+                                                >{" "}đ</span
+                                            >
+                                        </td>
+                                        <td
+                                            class="animate-num-in text-base font-normal text-slate-700 pl-4 pr-10 py-3 text-left truncate"
+                                        >
+                                            {#if transaction.description !== null}
+                                                {transaction.description ?? "-"}
+                                            {:else}
+                                                <span class="text-slate-400"
+                                                    >-</span
+                                                >
+                                            {/if}
+                                        </td>
+                                        <td
+                                            class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-3 text-left truncate"
+                                        >
+                                            {#if transaction.method !== null}
+                                                {transaction.method}
+                                            {:else}
+                                                <span class="text-slate-400"
+                                                    >-</span
+                                                >
+                                            {/if}
+                                        </td>
+                                        <td
+                                            class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-3 text-left"
+                                        >
+                                            {#if transaction.status !== null}
+                                                <Badge
+                                                    content={transaction.status}
+                                                    type="transactionStatus"
+                                                />
+                                            {:else}
+                                                <span class="text-slate-400"
+                                                    >-</span
+                                                >
+                                            {/if}
+                                        </td>
+                                        <td
+                                            class="animate-num-in text-base font-medium text-slate-700 pl-4 pr-10 py-3 text-left"
+                                        >
+                                            {#if transaction.type !== null}
+                                                <Badge
+                                                    content={transaction.type}
+                                                    type="transactionType"
+                                                />
+                                            {:else}
+                                                <span class="text-slate-400"
+                                                    >-</span
+                                                >
+                                            {/if}
+                                        </td>
+                                        <td
+                                            class="animate-num-in text-base font-normal text-slate-700 pl-4 pr-10 py-3 text-left"
+                                        >
+                                            {#if transaction.recordedDate === null}
+                                                <span class="text-slate-400"
+                                                    >-</span
+                                                >
+                                            {:else}
+                                                {new Date(
+                                                    transaction.recordedDate as Date,
+                                                ).toLocaleDateString("en-GB", {
+                                                    year: "numeric",
+                                                    month: "2-digit",
+                                                    day: "2-digit",
+                                                })}
+                                            {/if}
+                                        </td>
+                                        <td
+                                            class="max-w-24 text-base font-medium text-slate-700 pl-4 pr-10 py-3 text-right"
+                                        >
+                                            <div
+                                                class="flex items-center basic-transition max-h-7"
+                                            >
+                                                <Button
+                                                    color="alternative"
+                                                    class="border-0 bg-transparent px-2 py-2 text-slate-700 basic-transition hidden group-hover:block animate-enter-from-right"
+                                                    ><EditOutline
+                                                        class="h-5 w-5"
+                                                    /></Button
+                                                >
+                                                <Button
+                                                    on:click={() => {
+                                                        handleDeleteTransaction(
+                                                            transaction.id as number,
+                                                        );
+                                                    }}
+                                                    color="alternative"
+                                                    class="border-0 bg-transparent px-2 py-2 text-rose-700 basic-transition hidden group-hover:block animate-enter-from-right"
+                                                    ><TrashBinOutline
+                                                        class="h-5 w-5"
+                                                    /></Button
+                                                >
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    </div>
+                {/if}
+                <div class="flex justify-between items-center px-3">
+                    <span class="text-slate-500 text-sm"
+                        >Found {transactions.length} records</span
+                    >
+                    <div class="flex gap-1 items-center">
+                        <Button
+                            disabled={currentPage === 1}
+                            color="alternative"
+                            class="border-0 bg-transparent px-2 py-2 text-slate-700 basic-transition"
+                            on:click={() => setPage(1)}
+                            ><ChevronDoubleLeftOutline
+                                class="h-5 w-5"
+                            /></Button
+                        >
+                        <Button
+                            disabled={currentPage === 1}
+                            color="alternative"
+                            class="border-0 bg-transparent px-2 py-2 text-slate-700 basic-transition"
+                            on:click={() => setPage(currentPage - 1)}
+                            ><ChevronLeftOutline class="h-5 w-5" /></Button
+                        >
+                        {#if pageCount > 5 && currentPage > 5}
+                            <Button
+                                color="alternative"
+                                class={`border-0 px-2 py-2 hover:bg-transparent bg-transparent`}
+                                ><DotsHorizontalOutline
+                                    class="h-5 w-5"
+                                /></Button
+                            >
+                        {/if}
+                        {#each pagesVisible as page (page.num)}
+                            <Button
+                                disabled={currentPage === page.num}
+                                color="alternative"
+                                class={`w-9 h-9 border-0 bg-transparent px-2 py-2 text-slate-700 basic-transition ${page.num === currentPage && "border border-slate-500"}`}
+                                on:click={() => setPage(page.num)}
+                                ><span>{page.num}</span></Button
+                            >
+                        {/each}
+                        {#if pageCount > 5 && currentPage < pageCount - 4}
+                            <Button
+                                color="alternative"
+                                class={`border-0 px-2 py-2 hover:bg-transparent bg-transparent`}
+                                ><DotsHorizontalOutline
+                                    class="h-5 w-5"
+                                /></Button
+                            >
+                        {/if}
+                        <Button
+                            disabled={currentPage === pageCount}
+                            color="alternative"
+                            class="border-0 bg-transparent px-2 py-2 text-slate-700 basic-transition"
+                            on:click={() => setPage(currentPage + 1)}
+                            ><ChevronRightOutline class="h-5 w-5" /></Button
+                        >
+                        <Button
+                            disabled={currentPage === pageCount}
+                            color="alternative"
+                            class="border-0 bg-transparent px-2 py-2 text-slate-700 basic-transition"
+                            on:click={() => setPage(pages.length)}
+                            ><ChevronDoubleRightOutline
+                                class="h-5 w-5"
+                            /></Button
+                        >
+                    </div>
+                </div>
+            {/if}
         </div>
         <div
-            class="w-full h-full col-span-3 bg-white/50 backdrop-blur-2xl p-5 rounded-3xl animate-fade-in"
+            class="w-full h-full flex flex-col gap-4 col-span-3 bg-white/40 backdrop-blur-2xl p-5 rounded-3xl animate-fade-in"
         >
             <div class="flex justify-between items-center pt-2 pl-2">
                 <h1 class="text-slate-700 text-2xl">Insights</h1>
                 <div></div>
+            </div>
+            <div class="w-full p-4 rounded-2xl bg-white/50 flex flex-col gap-2">
+                <div class="flex gap-1 justify-between w-full h-8">
+                    <span class="text-base text-slate-500">Margin</span>
+                    <div
+                        class={`flex items-center gap-1 text-base text-slate-600 font-medium animate-num-in`}
+                    >
+                        <ChevronDoubleDownOutline
+                            class={`w-6 h-6 -ml-[6px] ${margin > 0 && "text-emerald-700"} ${margin < 0 && "text-rose-700"}`}
+                        />
+                        <span
+                            class={`${margin > 0 && "text-emerald-800"} ${margin < 0 && "text-rose-800"}`}
+                            >{margin.toLocaleString()}</span
+                        >
+                        <span class="text-slate-400">{" "}đ</span>
+                    </div>
+                </div>
+                <div class="flex gap-1 justify-between w-full h-8">
+                    <span class="text-base text-slate-500">Total Revenue</span>
+                    <div
+                        class={`flex items-center gap-1 text-base text-slate-600 font-medium animate-num-in`}
+                    >
+                        <span>{totalRevenue.toLocaleString()}</span>
+                        <span class="text-slate-400">{" "}đ</span>
+                    </div>
+                </div>
+                <div class="flex gap-1 justify-between w-full h-8">
+                    <span class="text-base text-slate-500">Paid Expense</span>
+                    <div
+                        class={`flex items-center gap-1 text-base text-slate-600 font-medium animate-num-in`}
+                    >
+                        <span>{paidExpense.toLocaleString()}</span>
+                        <span class="text-slate-400">{" "}đ</span>
+                    </div>
+                </div>
+                <div class="flex gap-1 justify-between w-full h-8">
+                    <span class="text-base text-slate-500"
+                        >Upcoming Expense</span
+                    >
+                    <div
+                        class={`flex items-center gap-1 text-base text-slate-600 font-medium animate-num-in`}
+                    >
+                        <span>{upcomingExpense.toLocaleString()}</span>
+                        <span class="text-slate-400">{" "}đ</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

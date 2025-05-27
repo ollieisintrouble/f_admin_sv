@@ -23,8 +23,7 @@ export const colorMap: ColorMapping = {
     transactionType: {
         Sale: "emerald",
         Asset: "sky",
-        Campaign: "pink",
-        Building: "purple",
+        Advertising: "purple",
         Fees: "amber",
         Payday: "teal",
     },

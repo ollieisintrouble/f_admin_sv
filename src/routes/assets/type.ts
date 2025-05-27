@@ -1,5 +1,5 @@
 export type Asset = {
-    id: number;
+    id: number | null;
     title: string;
     cost: number;
     description: string | null;
