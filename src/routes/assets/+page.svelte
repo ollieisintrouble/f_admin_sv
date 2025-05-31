@@ -49,11 +49,12 @@
         pagesVisible = CalcVisiblePages(pages, page);
     }
     import { toast } from "svelte-sonner";
+    import { apiUrl } from "$lib/utils";
 
     onMount(async () => {
         isLoading = true;
         const fetchAssets = await fetch(
-            `http://localhost:8080/api/assets?org_id=${$currentOrg!.id}`,
+            `${apiUrl}/api/assets?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
                 credentials: "include",
@@ -74,7 +75,7 @@
         }
 
         const fetchTransactions = await fetch(
-            `http://localhost:8080/api/transactions?org_id=${$currentOrg!.id}`,
+            `${apiUrl}/api/transactions?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
                 credentials: "include",
@@ -158,7 +159,7 @@
 
         try {
             const newAssetRequest = await fetch(
-                `http://localhost:8080/api/assets?org_id=${$currentOrg!.id}`,
+                `${apiUrl}/api/assets?org_id=${$currentOrg!.id}`,
                 {
                     method: "POST",
                     credentials: "include",
@@ -193,7 +194,7 @@
     async function handleDeleteAsset(id: number) {
         try {
             const deleteAssetRequest = await fetch(
-                `http://localhost:8080/api/assets?org_id=${$currentOrg!.id}`,
+                `${apiUrl}/api/assets?org_id=${$currentOrg!.id}`,
                 {
                     method: "DELETE",
                     credentials: "include",

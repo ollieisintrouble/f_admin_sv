@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit'
 import { TokenExpired } from '$lib/session/session';
 import type { Handle } from '@sveltejs/kit';
+import { apiUrl } from '$lib/utils';
 
 export const handle: Handle = async ({ event, resolve }) => {
     const token = event.cookies.get('authToken');
@@ -17,7 +18,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     if (token) {
-        const response = await fetch('http://localhost:8080/api/valtok', {
+        const response = await fetch(`${apiUrl}/api/valtok`, {
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`

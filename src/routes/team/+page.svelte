@@ -2,22 +2,9 @@
     import { onMount } from "svelte";
     import { currentOrg, user } from "$lib/stores/session";
     import type { Member } from "./types";
-    import Badge from "$lib/components/ui/badge/Badge.svelte";
     import Empty from "$lib/components/ui/empty/Empty.svelte";
-    import {
-        Datepicker,
-        Label,
-        Input,
-        Modal,
-        Button,
-        Spinner,
-        Avatar,
-    } from "flowbite-svelte";
-    import {
-        TrashBinOutline,
-        EditOutline,
-        CirclePlusOutline,
-    } from "flowbite-svelte-icons";
+    import { Spinner, Avatar } from "flowbite-svelte";
+    import { apiUrl } from "$lib/utils";
 
     let isLoading = $state<boolean>(false);
     let members: Member[] = $state<Member[]>([]);
@@ -25,7 +12,7 @@
     onMount(async () => {
         isLoading = true;
         const fetchAssets = await fetch(
-            `http://localhost:8080/api/users?org_id=${$currentOrg!.id}`,
+            `${apiUrl}/api/users?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
                 credentials: "include",

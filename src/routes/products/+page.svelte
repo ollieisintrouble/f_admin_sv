@@ -18,6 +18,7 @@
         CirclePlusOutline,
     } from "flowbite-svelte-icons";
     import { toast } from "svelte-sonner";
+    import { apiUrl } from "$lib/utils";
 
     let isLoading = $state<boolean>(false);
     let products = $state<Product[]>([]);
@@ -27,7 +28,7 @@
     onMount(async () => {
         isLoading = true;
         const fetchProducts = await fetch(
-            `http://localhost:8080/api/products?org_id=${$currentOrg!.id}`,
+            `${apiUrl}/api/products?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
                 credentials: "include",
@@ -114,7 +115,7 @@
 
         try {
             const newProductRequest = await fetch(
-                `http://localhost:8080/api/products?org_id=${$currentOrg!.id}`,
+                `${apiUrl}/api/products?org_id=${$currentOrg!.id}`,
                 {
                     method: "POST",
                     credentials: "include",
@@ -147,7 +148,7 @@
     async function handleDeleteProduct(id: number) {
         try {
             const deleteProductRequest = await fetch(
-                `http://localhost:8080/api/products?org_id=${$currentOrg!.id}`,
+                `${apiUrl}/api/products?org_id=${$currentOrg!.id}`,
                 {
                     method: "DELETE",
                     credentials: "include",

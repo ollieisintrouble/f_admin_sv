@@ -26,6 +26,7 @@
     import type { Page } from "$lib/types/types";
     import { CalcPages, CalcVisiblePages } from "$lib/pagination/helpers";
     import { toast } from "svelte-sonner";
+    import { apiUrl } from "$lib/utils";
 
     let isLoading = $state<boolean>(false);
     let transactions = $state<Transaction[]>([]);
@@ -49,7 +50,7 @@
     onMount(async () => {
         isLoading = true;
         const fetchTransactions = await fetch(
-            `http://localhost:8080/api/transactions?org_id=${$currentOrg!.id}`,
+            `${apiUrl}/api/transactions?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
                 credentials: "include",
@@ -144,7 +145,7 @@
 
         try {
             const newTransactionRequest = await fetch(
-                `http://localhost:8080/api/transactions?org_id=${$currentOrg!.id}`,
+                `${apiUrl}/api/transactions?org_id=${$currentOrg!.id}`,
                 {
                     method: "POST",
                     credentials: "include",
@@ -179,7 +180,7 @@
     async function handleDeleteTransaction(id: number) {
         try {
             const deleteTransactionRequest = await fetch(
-                `http://localhost:8080/api/transactions?org_id=${$currentOrg!.id}`,
+                `${apiUrl}/api/transactions?org_id=${$currentOrg!.id}`,
                 {
                     method: "DELETE",
                     credentials: "include",
