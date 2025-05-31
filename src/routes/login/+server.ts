@@ -28,6 +28,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
                     httpOnly: true,
                     secure: true,
                     path: '/',
+                    sameSite: 'none',
                     encode: (value) => value
                 });
             } else {
