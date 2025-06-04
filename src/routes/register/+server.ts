@@ -25,6 +25,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
                 secure: true,
                 path: '/',
                 sameSite: 'none',
+                encode: (value) => value
             })
             return json({ token });
         } else {
