@@ -23,7 +23,6 @@ export const handle: Handle = async ({ event, resolve }) => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
-            credentials: 'include'
         })
 
         if (response.ok) {

@@ -16,7 +16,6 @@
     import {
         TrashBinOutline,
         EditOutline,
-        CirclePlusOutline,
         PlusOutline,
         ChevronLeftOutline,
         ChevronRightOutline,
@@ -26,6 +25,8 @@
     } from "flowbite-svelte-icons";
     import type { Page } from "$lib/types/types";
     import { CalcPages, CalcVisiblePages } from "$lib/pagination/helpers";
+    import { toast } from "svelte-sonner";
+    import { ApiUrl, GetAuthToken } from "$lib/utils";
 
     let isLoading = $state<boolean>(false);
     let assets: Asset[] = $state<Asset[]>([]);
@@ -48,17 +49,22 @@
         currentPage = page;
         pagesVisible = CalcVisiblePages(pages, page);
     }
-    import { toast } from "svelte-sonner";
-    import { apiUrl } from "$lib/utils";
+    const token = GetAuthToken();
 
     onMount(async () => {
         isLoading = true;
+
+        if (!token) {
+            toast.error("No auth token found");
+            return;
+        }
+
         const fetchAssets = await fetch(
-            `${apiUrl}/api/assets?org_id=${$currentOrg!.id}`,
+            `${ApiUrl}/api/assets?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
-                credentials: "include",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             },
@@ -75,11 +81,11 @@
         }
 
         const fetchTransactions = await fetch(
-            `${apiUrl}/api/transactions?org_id=${$currentOrg!.id}`,
+            `${ApiUrl}/api/transactions?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
-                credentials: "include",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             },
@@ -159,11 +165,11 @@
 
         try {
             const newAssetRequest = await fetch(
-                `${apiUrl}/api/assets?org_id=${$currentOrg!.id}`,
+                `${ApiUrl}/api/assets?org_id=${$currentOrg!.id}`,
                 {
                     method: "POST",
-                    credentials: "include",
                     headers: {
+                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify(newAsset),
@@ -194,11 +200,11 @@
     async function handleDeleteAsset(id: number) {
         try {
             const deleteAssetRequest = await fetch(
-                `${apiUrl}/api/assets?org_id=${$currentOrg!.id}`,
+                `${ApiUrl}/api/assets?org_id=${$currentOrg!.id}`,
                 {
                     method: "DELETE",
-                    credentials: "include",
                     headers: {
+                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify(id),

@@ -8,7 +8,6 @@
 
     async function handleSubmit(event: Event) {
         event.preventDefault();
-        console.log("Form submitted:", { username, password, pwcf });
 
         if (password !== pwcf) {
             error = "Passwords do not match";
@@ -20,7 +19,6 @@
         formData.append("password", password);
 
         try {
-            console.log("Sending fetch to /register");
             const response = await fetch("/register", {
                 method: "POST",
                 body: formData,
@@ -29,15 +27,8 @@
                 },
             });
             const responseBody = await response.text();
-            console.log("Fetch response:", {
-                status: response.status,
-                url: response.url,
-                headers: [...response.headers.entries()],
-                body: responseBody,
-            });
 
             if (response.ok) {
-                console.log("Redirecting to /");
                 window.location.href = "/";
             } else {
                 let data;
@@ -47,10 +38,8 @@
                     data = { message: "Registration failed" };
                 }
                 error = data.message || "Registration failed";
-                console.log("Registration error:", data);
             }
         } catch (err) {
-            console.error("Fetch error:", err);
             error = `An unexpected error occurred: ${err}`;
         }
     }

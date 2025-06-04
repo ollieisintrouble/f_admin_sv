@@ -4,19 +4,27 @@
     import type { Member } from "./types";
     import Empty from "$lib/components/ui/empty/Empty.svelte";
     import { Spinner, Avatar } from "flowbite-svelte";
-    import { apiUrl } from "$lib/utils";
+    import { ApiUrl, GetAuthToken } from "$lib/utils";
+    import { toast } from "svelte-sonner";
 
     let isLoading = $state<boolean>(false);
     let members: Member[] = $state<Member[]>([]);
+    const token = GetAuthToken();
 
     onMount(async () => {
         isLoading = true;
+
+        if (!token) {
+            toast.error("No auth token found");
+            return;
+        }
+
         const fetchAssets = await fetch(
-            `${apiUrl}/api/users?org_id=${$currentOrg!.id}`,
+            `${ApiUrl}/api/users?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
-                credentials: "include",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             },
@@ -26,7 +34,7 @@
             members = memberData;
             isLoading = false;
         } else {
-            console.log("Failed to get members");
+            toast.error("Failed to get members");
             isLoading = false;
         }
     });

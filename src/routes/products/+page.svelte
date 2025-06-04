@@ -18,21 +18,28 @@
         CirclePlusOutline,
     } from "flowbite-svelte-icons";
     import { toast } from "svelte-sonner";
-    import { apiUrl } from "$lib/utils";
+    import { ApiUrl, GetAuthToken } from "$lib/utils";
 
     let isLoading = $state<boolean>(false);
     let products = $state<Product[]>([]);
     let defaultModal = $state<boolean>(false);
     let newDate = $state<Date | null>(null);
+    const token = GetAuthToken();
 
     onMount(async () => {
         isLoading = true;
+
+        if (!token) {
+            toast.error("No auth token found");
+            return;
+        }
+
         const fetchProducts = await fetch(
-            `${apiUrl}/api/products?org_id=${$currentOrg!.id}`,
+            `${ApiUrl}/api/products?org_id=${$currentOrg!.id}`,
             {
                 method: "GET",
-                credentials: "include",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             },
@@ -115,11 +122,11 @@
 
         try {
             const newProductRequest = await fetch(
-                `${apiUrl}/api/products?org_id=${$currentOrg!.id}`,
+                `${ApiUrl}/api/products?org_id=${$currentOrg!.id}`,
                 {
                     method: "POST",
-                    credentials: "include",
                     headers: {
+                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify(newProduct),
@@ -148,11 +155,11 @@
     async function handleDeleteProduct(id: number) {
         try {
             const deleteProductRequest = await fetch(
-                `${apiUrl}/api/products?org_id=${$currentOrg!.id}`,
+                `${ApiUrl}/api/products?org_id=${$currentOrg!.id}`,
                 {
                     method: "DELETE",
-                    credentials: "include",
                     headers: {
+                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify(id),

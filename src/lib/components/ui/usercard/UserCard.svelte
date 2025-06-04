@@ -33,9 +33,16 @@
             user.set(null);
             memberships.set([]);
             orgs.set([]);
+            document.cookie =
+                "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure";
             window.location.href = "/";
         } else {
-            console.log("logout fail");
+            user.set(null);
+            memberships.set([]);
+            orgs.set([]);
+            document.cookie =
+                "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure";
+            window.location.href = "/";
         }
     }
 </script>
