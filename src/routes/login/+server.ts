@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
-import { apiUrl } from '$lib/utils';
+import { ApiUrl } from '$lib/utils';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
     const formData = await request.formData();
@@ -11,7 +11,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         return json({ message: 'Missing username or password' }, { status: 400 });
     }
 
-    const response = await fetch(`${apiUrl}/api/login`, {
+    const response = await fetch(`${ApiUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
